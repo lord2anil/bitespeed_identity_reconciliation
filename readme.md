@@ -1,8 +1,8 @@
 ## Api url
 https://bitespeed-identity-reconciliation-9r1u.onrender.com/identity/
 
-You can see the Django admin panel at https://bitespeed-identity-reconciliation-9r1u.onrender.com/admin
-user-: admin
+You can see the Django admin panel at https://bitespeed-identity-reconciliation-9r1u.onrender.com/admin   .
+user-: admin  .
 password-: admin
 
 
