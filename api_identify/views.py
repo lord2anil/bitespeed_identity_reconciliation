@@ -10,91 +10,146 @@ from rest_framework.views import APIView
 # Create your views here.
 
 class identity(APIView):
+
+
+  
+  def find_phonenumber_data(self,phonenumber,all_data, filter_data):
+
+    phonenumber_rows=[]
+    for x in all_data:
+        if phonenumber ==x.phonenumber:
+            phonenumber_rows.append(x)
+
+          
+    if len(phonenumber_rows)==0:
+        return all_data,filter_data
+    new_all_data=[]
+    for x in phonenumber_rows:
+        filter_data.append(x)
+        
+    for x in all_data:
+        p=0
+        for y in phonenumber_rows:
+            if y.phonenumber==x.phonenumber:
+                p=1
+                break
+        if p==0:
+            new_all_data.append(x)
+
+    all_data=new_all_data
+
+    for x in filter_data:
+        all_data,filter_data=self.find_email_data(x.email,all_data,filter_data)
+    return all_data,filter_data
+  def find_email_data(self,email,all_data=[], filter_data=[]):
+
+    
+    email_rows=[]
+    for x in all_data:
+        if email ==x.email:
+            email_rows.append(x)
+
+    if len(email_rows)==0:
+        return all_data,filter_data
+
+    new_all_data=[]
+    for x in email_rows:
+        filter_data.append(x)
+    for x in all_data:
+
+        p=0
+        for y in email_rows:
+            if y.email==x.email:
+                p=1
+                break
+        if p==0:
+            new_all_data.append(x)
+    
+    all_data=new_all_data
+    for x in filter_data:
+        all_data,filter_data=self.find_phonenumber_data(x.phonenumber,all_data,filter_data)
+    return all_data,filter_data
+
+        
+
+        
+    
   def post(self,request):
         serializer = request_data(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
         phonenumber = serializer.validated_data['phonenumber']
-        common_email = Contact.objects.filter(Q(email=email))
-        common_phonenumber = Contact.objects.filter(phonenumber=phonenumber)
-        already_exists = Contact.objects.filter(Q(email=email) & Q(phonenumber=phonenumber))
-        primary_phone = common_phonenumber.filter(linkprecedence="primary")
-        primary_email = common_email.filter(linkprecedence="primary")
+        common_email = Contact.objects.filter(email=email).all()
+        common_phonenumber = Contact.objects.filter(phonenumber=phonenumber).all()
+        
         response = {
             "primaryContactId": "",
             "emails":[],
             "phonenumbers" : [],
             "secondaryContactIds":[]
         }
-        if already_exists.exists():
-            already_exists_obj = already_exists.first()
-            if already_exists_obj.linkprecedence == "primary":
-                response["primaryContactId"] = already_exists_obj.id
-                response["emails"] = list(Contact.objects.filter(linkedId=already_exists_obj.id).values_list("email",flat=True).distinct())
-                response["phonenumbers"] = list(Contact.objects.filter(linkedId=already_exists_obj.id).values_list("phonenumber",flat=True).distinct())
-                response["secondaryContactIds"] = list(Contact.objects.filter(linkedId=already_exists_obj.id).values_list("id",flat=True).distinct())
+        if len(common_email)==0 and len(common_phonenumber)==0:
+
+            contact_1=Contact.objects.create(email=email,phonenumber=phonenumber)
+            contact_1.save()
+            response["primaryContactId"]=contact_1.id
+            response["emails"].append(email)
+            response["phonenumbers"].append(phonenumber)
+            response["secondaryContactIds"].append(None)
+            serializer = response_Contact(data = response)
+            if serializer.is_valid():
+                return Response(serializer.data)
             else:
-                response["primaryContactId"] = already_exists_obj.linkedId
-                response["emails"] = list(Contact.objects.filter(linkedId=already_exists_obj.linkedId).values_list("email",flat=True).distinct())
-                response["phonenumbers"] = list(Contact.objects.filter(linkedId=already_exists_obj.linkedId).values_list("phonenumber",flat=True).distinct())
-                response["secondaryContactIds"] = list(Contact.objects.filter(linkedId=already_exists_obj.linkedId).values_list("id",flat=True).distinct())
-            print(response)
-        else:
-            if primary_email.exists() and primary_phone.exists():
-                if primary_email.first().createdAt > primary_phone.first().createdAt:
-                    obj = primary_email.first()
-                    obj.linkedId = primary_phone.first().id
-                    obj.linkprecedence = "secondary"
-                    obj.save()
-                    response["primaryContactId"] = primary_phone.first().id
-                    response["emails"] = list(Contact.objects.filter(linkedId=primary_phone.first().id).values_list("email",flat=True).distinct())
-                    response["phonenumbers"] = list(Contact.objects.filter(linkedId=primary_phone.first().id).values_list("phonenumber",flat=True).distinct())
-                    response["secondaryContactIds"] = list(Contact.objects.filter(linkedId=primary_phone.first().id).values_list("id",flat=True).distinct())
-                else:
-                    obj = primary_phone.first()
-                    obj.linkedId = primary_email.first().id
-                    obj.linkprecedence = "secondary"
-                    obj.save()
-                    response["primaryContactId"] = primary_email.first().id
-                    response["emails"] = list(Contact.objects.filter(linkedId=primary_email.first().id).values_list("email",flat=True).distinct())
-                    response["phonenumbers"] = list(Contact.objects.filter(linkedId=primary_email.first().id).values_list("phonenumber",flat=True).distinct())
-                    response["secondaryContactIds"] = list(Contact.objects.filter(linkedId=primary_email.first().id).values_list("id",flat=True).distinct())
-            elif common_email.exists():
-                primary_common_email = Contact.objects.filter((Q(linkprecedence="primary") & Q(email=email)) | Q(id = common_email.first().linkedId)).first()
-                if phonenumber is not None:
-                    contact = Contact(
-                        phonenumber=phonenumber,
-                        email=email,
-                        linkedId = primary_common_email.id,
-                        linkprecedence = "secondary"
-                    )
-                    print(contact)
-                    contact.save()
-                response["primaryContactId"] = primary_common_email.id
-                response["emails"] = list(Contact.objects.filter(linkedId=primary_common_email.id).values_list("email",flat=True).distinct()) + [primary_common_email.email]
-                response["phonenumbers"] = list(Contact.objects.filter(linkedId=primary_common_email.id).values_list("phonenumber",flat=True).distinct()) 
-                response["secondaryContactIds"] = list(Contact.objects.filter(linkedId=primary_common_email.id).values_list("id",flat=True).distinct())
-            elif common_phonenumber.exists():
-                primary_common_phonenumber = Contact.objects.filter((Q(linkprecedence="primary") & Q(phonenumber=phonenumber)) | Q(id = common_phonenumber.first().linkedId)).first()
-                if email is not None:
-                    contact = Contact(
-                        phonenumber=phonenumber,
-                        email=email,
-                        linkedId = primary_common_phonenumber.id,
-                        linkprecedence = "secondary"
-                    )
-                    print(contact)
-                    contact.save()
-                response["primaryContactId"] = primary_common_phonenumber.id
-                response["emails"] = list(Contact.objects.filter(linkedId=primary_common_phonenumber.id).values_list("email",flat=True).distinct()) + [primary_common_phonenumber.email]
-                response["phonenumbers"] = list(Contact.objects.filter(linkedId=primary_common_phonenumber.id).values_list("phonenumber",flat=True).distinct())
-                response["secondaryContactIds"] = list(Contact.objects.filter(linkedId=primary_common_phonenumber.id).values_list("id",flat=True).distinct())
-            else:
-                obj = Contact.objects.create(email=email,phonenumber=phonenumber)
-                response["primaryContactId"] = obj.id
-                response["emails"] = [obj.email]
-                response["phonenumbers"] = [obj.phonenumber]
-                response["secondaryContactIds"] = []
+                return Response (str(serializer.errors))
+        elif len(common_email)==0 and len(common_phonenumber)!=0:
+            contact_1=Contact.objects.create(email=email,phonenumber=phonenumber,linkprecedence="secondary")
+            contact_1.save()
+        elif len(common_email)!=0 and len(common_phonenumber)==0:
+            contact_1=Contact.objects.create(email=email,phonenumber=phonenumber,linkprecedence="secondary")
+            contact_1.save()
+            
+            
+            
+        
+        
+        all_data=Contact.objects.all()
+        filter_data=[]
+        if email is not None:
+            all_data,filter_data=self.find_email_data(email,all_data,filter_data)
+        if phonenumber is not None:
+            all_data,filter_data=self.find_phonenumber_data(phonenumber,all_data,filter_data)
+        
+        # for x in filter_data:
+        #     print(x.email,x.phonenumber)
+
+        # print(filter_data)
+        ## sort the based on created time, oldest first
+        filter_data.sort(key=lambda x: x.created_at)    
+        print(filter_data)
+        primary_contact_id=filter_data[0].id
+
+        response["primaryContactId"]=primary_contact_id
+        for x in filter_data:
+            if x.id!=primary_contact_id:
+                response["emails"].append(x.email)
+                response["phonenumbers"].append(x.phonenumber)
+                response["secondaryContactIds"].append(x.id)
+        
+        ## upadate the link precedence of all secondary contacts to secondary in the database
+        primary_contact=Contact.objects.get(id=primary_contact_id)
+        primary_contact.linkprecedence="primary"
+        primary_contact.save()
+        for id_1 in response["secondaryContactIds"]:
+            if id_1 is not None:
+                secondary_contact=Contact.objects.get(id=id_1)
+                secondary_contact.linkprecedence="secondary"
+                secondary_contact.save()
+
+            
+            
+
+
+       
         serializer = response_Contact(data = response)
         if serializer.is_valid():
             return Response(serializer.data)
