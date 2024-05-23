@@ -1,4 +1,4 @@
-from django.shortcuts import render 
+
 from .models import *
 from .serializers import *
 from django.http import HttpResponse 
@@ -108,10 +108,7 @@ class identity(APIView):
             contact_1=Contact.objects.create(email=email,phonenumber=phonenumber,linkprecedence="secondary")
             contact_1.save()
             
-            
-            
-        
-        
+         
         all_data=Contact.objects.all()
         filter_data=[]
         if email is not None:
