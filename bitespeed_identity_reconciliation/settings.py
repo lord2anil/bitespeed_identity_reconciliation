@@ -26,6 +26,8 @@ SECRET_KEY = 'django-insecure-mp7dzr#f13n#7kc2*^sgsrajag377(h4hj#sd4(fc6jema)9cm
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+DOMAIN_HOST = "https://bitespeed-identity-reconciliation-9r1u.onrender.com"
+CSRF_TRUSTED_ORIGINS = ["https://bitespeed-identity-reconciliation-9r1u.onrender.com","http://bitespeed-identity-reconciliation-9r1u.onrender.com"]
 
 
 # Application definition
