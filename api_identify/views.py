@@ -14,24 +14,24 @@ class identity(APIView):
 
 
   
-  def find_phonenumber_data(self,phonenumber,all_data, filter_data):
+  def find_phoneNumber_data(self,phoneNumber,all_data, filter_data):
 
-    phonenumber_rows=[]
+    phoneNumber_rows=[]
     for x in all_data:
-        if phonenumber ==x.phonenumber:
-            phonenumber_rows.append(x)
+        if phoneNumber ==x.phoneNumber:
+            phoneNumber_rows.append(x)
 
           
-    if len(phonenumber_rows)==0:
+    if len(phoneNumber_rows)==0:
         return all_data,filter_data
     new_all_data=[]
-    for x in phonenumber_rows:
+    for x in phoneNumber_rows:
         filter_data.append(x)
         
     for x in all_data:
         p=0
-        for y in phonenumber_rows:
-            if y.phonenumber==x.phonenumber:
+        for y in phoneNumber_rows:
+            if y.phoneNumber==x.phoneNumber:
                 p=1
                 break
         if p==0:
@@ -68,7 +68,7 @@ class identity(APIView):
     
     all_data=new_all_data
     for x in filter_data:
-        all_data,filter_data=self.find_phonenumber_data(x.phonenumber,all_data,filter_data)
+        all_data,filter_data=self.find_phoneNumber_data(x.phoneNumber,all_data,filter_data)
     return all_data,filter_data
 
         
@@ -78,44 +78,53 @@ class identity(APIView):
   def post(self,request):
         data = request.data
         
-        email = data['email']
+        try :
+            email=data['email']
+        except:
+            email=""
+        try :
+            phoneNumber=data['phoneNumber']
+        except:
+            phoneNumber=""
+        
+        
         ## validate the email
-        try:
-            validate_email(email)
-        except ValidationError as e:
-            return Response("Please enter a valid email")
+        if email is not None and email!="":
+            try:
+                validate_email(email)
+            except ValidationError as e:
+                return Response("Please enter a valid email")
 
-        phonenumber = data['phonenumber']
-        if (email is None and phonenumber is None) or (email == "" and phonenumber == "")   :
-            return Response("Please enter either email or phonenumber")
+        if (email is None and phoneNumber is None) or (email == "" and phoneNumber == "")   :
+            return Response("Please enter either email or phoneNumber")
         common_email = Contact.objects.filter(email=email).all()
-        common_phonenumber = Contact.objects.filter(phonenumber=phonenumber).all()
+        common_phoneNumber = Contact.objects.filter(phoneNumber=phoneNumber).all()
         
         response = {
             "primaryContactId": "",
             "emails":[],
-            "phonenumbers" : [],
+            "phoneNumbers" : [],
             "secondaryContactIds":[]
         }
-        if (email == "" or email is None )and len(common_phonenumber)==0:
+        if (email == "" or email is None )and len(common_phoneNumber)==0:
             print("here")
-            contact_1=Contact.objects.create(email=email,phonenumber=phonenumber)
+            contact_1=Contact.objects.create(email=email,phoneNumber=phoneNumber)
             contact_1.save()
             response["primaryContactId"]=contact_1.id
             response["emails"]=[]
-            response["phonenumbers"].append(phonenumber)
+            response["phoneNumbers"].append(phoneNumber)
             response["secondaryContactIds"]=[]
             serializer = response_Contact(data = response)
             if serializer.is_valid():
                 return Response(serializer.data)
             else:
                 return Response (str(serializer.errors))
-        elif ( phonenumber == "" or phonenumber is None) and len(common_email)==0:
-            contact_1=Contact.objects.create(email=email,phonenumber=phonenumber)
+        elif ( phoneNumber == "" or phoneNumber is None) and len(common_email)==0:
+            contact_1=Contact.objects.create(email=email,phoneNumber=phoneNumber)
             contact_1.save()
             response["primaryContactId"]=contact_1.id
             response["emails"].append(email)
-            response["phonenumbers"]=[]
+            response["phoneNumbers"]=[]
             response["secondaryContactIds"]=[]
             serializer = response_Contact(data = response)
             if serializer.is_valid():
@@ -123,24 +132,24 @@ class identity(APIView):
             else:
                 return Response (str(serializer.errors))
         
-        if len(common_email)==0 and len(common_phonenumber)==0 and email is not None and email!="" and phonenumber is not None and phonenumber!="":
-
-            contact_1=Contact.objects.create(email=email,phonenumber=phonenumber)
+        if len(common_email)==0 and len(common_phoneNumber)==0 and email is not None and email!="" and phoneNumber is not None and phoneNumber!="":
+            print(email,phoneNumber)
+            contact_1=Contact.objects.create(email=email,phoneNumber=phoneNumber)
             contact_1.save()
             response["primaryContactId"]=contact_1.id
             response["emails"].append(email)
-            response["phonenumbers"].append(phonenumber)
+            response["phoneNumbers"].append(phoneNumber)
             response["secondaryContactIds"]=[]
             serializer = response_Contact(data = response)
             if serializer.is_valid():
                 return Response(serializer.data)
             else:
                 return Response (str(serializer.errors))
-        elif len(common_email)==0 and len(common_phonenumber)!=0  and email is not None and email!="":
-            contact_1=Contact.objects.create(email=email,phonenumber=phonenumber,linkprecedence="secondary")
+        elif len(common_email)==0 and len(common_phoneNumber)!=0  and email is not None and email!="":
+            contact_1=Contact.objects.create(email=email,phoneNumber=phoneNumber,linkprecedence="secondary")
             contact_1.save()
-        elif len(common_email)!=0 and len(common_phonenumber)==0 and phonenumber is not None and phonenumber!="":
-            contact_1=Contact.objects.create(email=email,phonenumber=phonenumber,linkprecedence="secondary")
+        elif len(common_email)!=0 and len(common_phoneNumber)==0 and phoneNumber is not None and phoneNumber!="":
+            contact_1=Contact.objects.create(email=email,phoneNumber=phoneNumber,linkprecedence="secondary")
             contact_1.save()
             
          
@@ -148,11 +157,11 @@ class identity(APIView):
         filter_data=[]
         if email is not None and email!="":
             all_data,filter_data=self.find_email_data(email,all_data,filter_data)
-        if phonenumber is not None and phonenumber!="":
-            all_data,filter_data=self.find_phonenumber_data(phonenumber,all_data,filter_data)
+        if phoneNumber is not None and phoneNumber!="":
+            all_data,filter_data=self.find_phoneNumber_data(phoneNumber,all_data,filter_data)
         
         # for x in filter_data:
-        #     print(x.email,x.phonenumber)
+        #     print(x.email,x.phoneNumber)
 
         # print(filter_data)
         ## sort the based on created time, oldest first
@@ -163,7 +172,7 @@ class identity(APIView):
         response["primaryContactId"]=primary_contact_id
         for x in filter_data:
                 response["emails"].append(x.email)
-                response["phonenumbers"].append(x.phonenumber)
+                response["phoneNumbers"].append(x.phoneNumber)
                 if x.id!=primary_contact_id:
                   response["secondaryContactIds"].append(x.id)
         

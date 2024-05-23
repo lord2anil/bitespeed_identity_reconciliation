@@ -1,6 +1,10 @@
 ## Api url
 https://bitespeed-identity-reconciliation-9r1u.onrender.com/identity/
 
+You can see the Django admin panel at https://bitespeed-identity-reconciliation-9r1u.onrender.com/admin
+user-: admin
+password-: admin
+
 
 
 ### Project setup
@@ -11,6 +15,11 @@ docker build -t my_django_app .
 docker run -p 8000:8000 my_django_app
 ```
 The api is live at 0.0.0.0:8000/identity/
+
+You can see the Django admin panel at 0.0.0.0:8000/admin
+user-: admin
+password-: admin
+
 
 
 
