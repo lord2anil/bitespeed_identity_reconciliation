@@ -20,7 +20,10 @@ EXPOSE 8000
 RUN rm -f db.sqlite3
 # Run the application
 RUN python manage.py makemigrations 
+RUN python manage.py makemigrations api_identify
 RUN python manage.py migrate  
+RUN python manage.py migrate  api_identify
+
 # RUN python manage.py insertdata
 # create a superadmin
 RUN echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', 'admin')" | python manage.py shell
