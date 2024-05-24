@@ -171,10 +171,13 @@ class identity(APIView):
 
         response["primaryContactId"]=primary_contact_id
         for x in filter_data:
-                response["emails"].append(x.email)
-                response["phoneNumbers"].append(x.phoneNumber)
+                if response['emails'].count(x.email)==0:
+                    response["emails"].append(x.email)
+                if response['phoneNumbers'].count(x.phoneNumber)==0:
+                    response["phoneNumbers"].append(x.phoneNumber)
                 if x.id!=primary_contact_id:
                   response["secondaryContactIds"].append(x.id)
+        
         
         ## upadate the link precedence of all secondary contacts to secondary in the database
         primary_contact=Contact.objects.get(id=primary_contact_id)
@@ -187,7 +190,7 @@ class identity(APIView):
                 secondary_contact.save()
 
             
-            
+        
 
 
         # print(response)
