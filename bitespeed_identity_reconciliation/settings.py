@@ -33,6 +33,7 @@ CSRF_TRUSTED_ORIGINS = ["https://bitespeed-identity-reconciliation-9r1u.onrender
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
